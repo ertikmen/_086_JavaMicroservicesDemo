@@ -1,0 +1,45 @@
+server:
+  port: 80
+  error:
+    whitelabel:
+      enabled: false
+
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: java10
+    password: 123
+  zipkin:
+    enabled: true
+    base-url: http://localhost:9411
+    service:
+      name: api-gateway
+  cloud:
+    gateway:
+      default-filters:
+        #http://localhost:9090/auth/findById/1
+        #auth/findById/1
+        - RewritePath= /(?<segment>/?.*), /$\{segment}
+      routes:
+        - id: auth-service
+          uri: http://localhost:9090
+          predicates:
+            - Path=/auth/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: auth
+                fallbackUri: forward:/fallback/auth
+        - id: product-service
+          uri: http://localhost:9091
+          predicates:
+            - Path=/product/**
+        - id: sale-service
+          uri: http://localhost:9092
+          predicates:
+            - Path=/sale/**
+        - id: user-profile-service
+          uri: http://localhost:9093
+          predicates:
+            - Path=/user/**
